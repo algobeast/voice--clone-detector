@@ -38,42 +38,82 @@ def analyse(audio_path):
     return f"{verdict}\n\nSynthetic probability: {score:.1f}%"
 
 CSS = """
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500&display=swap');
+
 .gradio-container {
-    background: #0a0a0a !important;
-    font-family: 'Inter', -apple-system, system-ui, sans-serif !important;
-    max-width: 560px !important;
-    margin: 0 auto !important;
+    background: #10505c !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    min-height: 100vh !important;
+    font-family: 'Inter', sans-serif !important;
 }
-#title {
+.contain, .main, .wrap { background: transparent !important; }
+
+#hero {
     text-align: center;
-    font-size: 1.6rem;
-    font-weight: 500;
-    letter-spacing: -0.02em;
-    color: #fafafa;
-    margin: 3rem 0 0.4rem 0;
+    padding: 5rem 1.5rem 1rem 1.5rem;
+    max-width: 640px;
+    margin: 0 auto;
 }
-#sub {
-    text-align: center;
-    font-size: 0.85rem;
-    color: #666;
-    margin-bottom: 2.5rem;
-    font-weight: 400;
+#hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.2rem;
+    line-height: 1.1;
+    color: #ffffff;
+    margin: 0 0 1.5rem 0;
 }
+#hero p {
+    font-size: 1.05rem;
+    line-height: 1.65;
+    color: #cfe3e6;
+    margin: 0;
+}
+
+#panel {
+    max-width: 560px;
+    margin: 2.5rem auto 0 auto;
+    padding: 0 1.5rem 5rem 1.5rem;
+}
+
+/* audio box */
+.gradio-container .audio-container,
+.gradio-container [data-testid="audio"] {
+    background: rgba(255,255,255,0.06) !important;
+    border: 1.5px solid rgba(255,255,255,0.25) !important;
+    border-radius: 20px !important;
+    color: #fff !important;
+}
+
+/* button */
+button.primary, .gradio-container button.lg {
+    background: #ffffff !important;
+    color: #10505c !important;
+    border: 2px solid #2ecc8f !important;
+    border-radius: 999px !important;
+    font-size: 1.05rem !important;
+    font-weight: 500 !important;
+    padding: 1rem 2rem !important;
+    width: 100% !important;
+    margin-top: 1.5rem !important;
+}
+button.primary:hover { background: #2ecc8f !important; color: #fff !important; }
+
 #verdict {
+    font-family: 'Playfair Display', serif;
     text-align: center;
-    font-size: 1.5rem;
-    font-weight: 500;
-    letter-spacing: -0.01em;
-    padding: 2rem 0 0.5rem 0;
-    min-height: 2rem;
+    font-size: 3rem;
+    padding: 2.5rem 0 0.5rem 0;
 }
 #score {
     text-align: center;
-    font-size: 0.85rem;
-    color: #666;
-    padding-bottom: 2rem;
+    font-size: 0.95rem;
+    color: #cfe3e6;
+    letter-spacing: 0.02em;
+    padding-bottom: 1rem;
 }
 footer { display: none !important; }
+label, .label-wrap span { color: #cfe3e6 !important; }
 """
 
 def analyse(audio_path):
@@ -84,21 +124,27 @@ def analyse(audio_path):
     with torch.no_grad():
         score = torch.softmax(model(t), 1)[0, 1].item() * 100
     if score > 70:
-        v = f'<div id="verdict" style="color:#ff4444">Synthetic</div>'
+        v = '<div id="verdict" style="color:#ff8a80">Synthetic</div>'
     elif score > 40:
-        v = f'<div id="verdict" style="color:#ffaa00">Uncertain</div>'
+        v = '<div id="verdict" style="color:#ffd166">Uncertain</div>'
     else:
-        v = f'<div id="verdict" style="color:#00cc88">Human</div>'
+        v = '<div id="verdict" style="color:#2ecc8f">Human</div>'
     s = f'<div id="score">{score:.1f}% synthetic probability</div>'
     return v, s
 
 with gr.Blocks(css=CSS, theme=gr.themes.Base()) as demo:
-    gr.HTML('<div id="title">Voice Clone Detector</div>')
-    gr.HTML('<div id="sub">Upload or record speech to check if it is AI-generated</div>')
-    audio = gr.Audio(type="filepath", label="")
-    btn = gr.Button("Analyse", variant="primary")
-    verdict = gr.HTML()
-    score = gr.HTML()
+    gr.HTML("""
+    <div id="hero">
+      <h1>Is That Voice<br>Really Human?</h1>
+      <p>AI can now clone anyone's voice from a few seconds of audio.
+         Upload or record a clip and we'll tell you whether a machine made it.</p>
+    </div>
+    """)
+    with gr.Column(elem_id="panel"):
+        audio = gr.Audio(type="filepath", label="Upload or record audio")
+        btn = gr.Button("Analyse Voice", variant="primary", size="lg")
+        verdict = gr.HTML()
+        score = gr.HTML()
     btn.click(analyse, inputs=audio, outputs=[verdict, score])
 
 demo.launch(server_name="0.0.0.0", server_port=7860)
